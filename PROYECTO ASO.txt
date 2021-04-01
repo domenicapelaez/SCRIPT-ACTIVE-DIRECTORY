@@ -1,0 +1,248 @@
+
+clear
+do{
+    Write-host "        "
+    Write-Host "================ Active Directory ================"
+    Write-host "        "
+    Write-Host "1. Información."
+    Write-Host "2. Renombrar equipo."
+    Write-Host "3. Configurar Red."
+    Write-Host "4. Desactivar Firewall."
+    Write-Host "5. Instalar Active Directory."
+    write-Host "6. Agregar un nuevo dominio."
+    Write-Host "7. Unidad organizativa, usuarios y grupos."
+    Write-Host "8. Salir."
+    Write-host "        "
+   [int]$option = Read-Host "Selecciona una opcion"
+
+   if ($option -gt "8"){
+   clear
+   Write-Host "-------"
+   Write-Host "ERROR! Las Opciones validas son:"
+   Write-Host "-------"
+   }
+
+switch($option){
+        1 {
+            Clear-Host
+            $equipo = hostname
+
+            Write-host "Nombre del Equipo    : $equipo"
+            Get-NetIPConfiguration;
+            Write-host "        "
+            pause;
+            clear
+            break
+        }
+        2 {
+            Clear-Host
+            clear
+
+            $equipo = hostname
+            $nombre = Write-Host "El nombre del equipo es $equipo"
+
+            $SERVER = Read-Host "Introduce nuevo nombre al equipo"
+            $espacio = Write-Host "        "
+
+            $nombre 
+            Rename-Computer -NewName $SERVER
+                do{
+            $pregunta = Read-Host '¿Quieres reiniciar el equipo? s/n'
+            if($pregunta -eq 's'){ Restart-Computer }
+             }
+               until($pregunta -eq 'n')
+
+	    clear
+            Write-host "        "
+            pause;
+	    clear
+            break
+        }
+        3 {
+            Clear-Host
+            clear
+
+            [string]$IP= Read-Host "Introduce una Dirección Ip: " 
+
+            $x="1" 
+
+            while($x -eq 1)
+            {
+            if($IP -match "^([1-9]|[1-9][0-9]{3}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[2-4][0-9]|25[0-5])){3}$")
+            {
+            Write-Host "Dirección Ip válida" -ForegroundColor Yellow -NoNewline
+            $x="0"   
+            } else
+            {
+            Write-Host "No es una dirección Ip válida. " -ForegroundColor Yellow -NoNewline
+             [string]$IP= Read-Host "Por favor, introduce una Dirección Ip válida" 
+            }
+            Write-Host "            "
+}
+
+	    $mask = Read-Host "Introduce máscara de red"
+            $gateway = Read-Host "Introduce Puerta de enlace. 
+            Formato x.x.x.1"
+            $Adapter = Get-NetAdapter
+            $adaptador = $Adapter.ifIndex
+
+            New-NetIpAddress -InterfaceIndex $adaptador -IpAddress $IP -PrefixLength $mask -DefaultGateway $gateway
+            Write-host "        "
+            pause;
+            clear
+            break
+        }
+        4 {
+            Clear-Host
+            clear
+            $Domain = "Domain"
+            $Public = "Public"
+            $Private = "Private"
+            Set-Netfirewallprofile $Domain,$Public,$Private -enabled false
+            netsh advfirewall show allprofiles state
+            Write-host "        "
+            pause;
+            clear
+            break
+            }
+	5 {
+            Clear-Host
+            Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+
+                do{
+            $pregunta = Read-Host '¿Quieres reiniciar el equipo? s/n'
+            if($pregunta -eq 's'){ Restart-Computer }
+             }
+               until($pregunta -eq 'n')
+            Write-host "        "
+            pause; 
+	    clear
+            break
+            }
+         6 {
+            Clear-Host
+            clear
+            $dominio = Read-Host "Escribe un dominio x.y"
+            Install-Addsforest -DomainName "$dominio"
+            Write-host "        "
+            clear
+            pause;
+	    clear
+            break
+            }
+	7 {
+            clear
+do{
+    Write-host "        "
+    Write-Host "================ Admin. Active Directory ================"
+    Write-host "        "
+    Write-Host "1. Agregar unidad organizativa."
+    Write-Host "2. Agregar grupo."
+    Write-Host "3. Agregar usuario."
+    Write-Host "4. Volver."
+    Write-host "        "
+   [int]$option = Read-Host "Selecciona una opcion"
+
+   if ($option -gt "4"){
+   clear
+   Write-Host "-------"
+   Write-Host "ERROR! Las Opciones validas son:"
+   Write-Host "-------"
+   }
+
+switch($option){
+        1 {
+            Clear-Host
+            clear
+	    $nombreou= Read-Host "Introduce Nombre de la Unidad Organizativa."
+	    $dominio1 = Read-Host "Introduce nombre de dominio(x) x.y"
+ 	    $dom1 = "DC=$dominio1"
+	    $dominio2 = Read-Host "Introduce nombre de dominio(y) x.y"
+	    $dom2 = "DC=$dominio2"
+	    $dominio= "$dom1,$dom2"
+	    $espacio = Write-Host "        "
+
+	    New-ADOrganizationalUnit -Name $nombreou -Path $dominio -ProtectedFromAccidentalDeletion $false
+
+            $infor = Get-ADOrganizationalUnit "OU=$nombreou,DC=$dominio1,DC=$dominio2"
+            $espacio
+	    Write-Host "Se ha creado la unidad organizativa $nombreou"
+	    $infor
+            Write-host "        "
+            pause;
+            clear
+            break
+        }
+        2 {
+            Clear-Host
+	    clear
+            $grupo= Read-Host "Introduce nombre del grupo"
+            $nombreou = Read-Host "Nombre de unidad organizativa"
+            $nombre = "OU=$nombreou"
+	    $dominio1 = Read-Host "Introduce nombre de dominio(x) x.y"
+ 	    $dom1 = "DC=$dominio1"
+	    $dominio2 = Read-Host "Introduce nombre de dominio(y) x.y"
+	    $dom2 = "DC=$dominio2"
+	    $dominio= "$nombre,$dom1,$dom2"
+	    $espacio = Write-Host "        "
+        
+	    New-ADGroup $grupo -Path $dominio -GroupScope Global
+
+        $infor = Get-ADGroup $grupo
+        clear
+	    Write-Host "Se ha creado el grupo $grupo"
+	    $infor
+            Write-host "        "
+            pause;
+	        clear
+            break
+        }
+        3 {
+            Clear-Host
+	    clear
+	    $GivenName=Read-Host “Introduce el Nombre de Usuario"
+	    $SurName=Read-Host “Introduce el Apellido del Usuario”
+	    $Name=$GivenName+$SurName 
+	    $User=$Name
+	    $dominio1 = Read-Host "Escribe un dominio(x) x.y"
+	    $dominio2 = Read-Host "Escribe un dominio(y) x.y"
+	    $dominio = "$dominio1.$dominio2"
+	    $Upn=$User+”@”+$dominio
+	    $Department=Read-Host “Introduce Nombre de Departamento”
+	    $Email=$User+”@”+"$dominio1.$dominio2"
+            $Pass=Read-Host “Introduce conraseña para el usuario” -AsSecureString
+	    $enc_password = (ConvertTo-SecureString $Pass -AsPlainText -Force)
+	    $unidad = Read-Host "Nombre de unidad organizativa"
+	    $uni = $unidad
+	    $destino= “OU=$unidad,DC=$dominio1,DC=$dominio2”
+	    $espacio = Write-Host "        "
+
+	    New-ADUser -Name $Name -GivenName $GivenName -Surname $SurName -SamAccountName $User -UserPrincipalName $Upn -Enable $true -Description $Department -EmailAddress $Email -AccountPassword 	   $enc_password -path $destino
+        $infor = Get-ADGroup $User
+        clear
+        Write-Host "$User añadido a $unidad"
+        $infor
+            Write-host "        "
+            pause;
+            clear
+            break
+        }
+        4 {clear
+        Write-host "        "
+        "Has vuelto al menú principal!"; 
+        break
+        Write-host "        "
+        default {Write-Host "Fin";pause}
+            }
+    }
+ } until($option -eq "4") 
+            }
+        8 {clear
+        Write-host "        "
+        "Has salido del menú!"; 
+        break
+        Write-host "        "
+        default {Write-Host "Fin";pause}
+            }
+    }
+ } until($option -eq "8") 
